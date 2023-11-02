@@ -1,0 +1,23 @@
+{
+  "name": "2.4-exercise",
+  "version": "1.0.0",
+  "description": "bla",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/PsychoBoyJAck83/2.3-exercise.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/PsychoBoyJAck83/2.3-exercise/issues"
+  },
+  "homepage": "https://github.com/PsychoBoyJAck83/2.3-exercise#readme",
+  "dependencies": {
+    "express": "^4.18.2",
+    "express-fileupload": "^1.4.2"
+  }
+}
