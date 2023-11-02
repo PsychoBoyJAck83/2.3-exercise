@@ -17,6 +17,7 @@
   },
   "homepage": "https://github.com/PsychoBoyJAck83/2.3-exercise#readme",
   "dependencies": {
+    "@aws-sdk/client-s3": "^3.441.0",
     "express": "^4.18.2",
     "express-fileupload": "^1.4.2"
   }
