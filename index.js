@@ -19,7 +19,7 @@ app.use(fileUpload());
 
 // Define your routes and application logic here
 app.get('/', (req, res) => {
-  res.send("It's alive !");
+  res.status(200).send("It's alive !");
 });
 
 // Route to list objects in the S3 bucket
@@ -34,7 +34,7 @@ app.get('/listobjects', async (req, res) => {
     const response = await s3Client.send(command);
 
     const objectKeys = response.Contents.map((object) => object.Key);
-    res.json({ objectKeys });
+    res.status(200).json({ objectKeys });
   } catch (error) {
     console.error('Error listing objects:', error);
     res.status(500).json({ error: 'Failed to list objects' });
@@ -59,7 +59,7 @@ app.post('/upload', async (req, res) => {
     const command = new PutObjectCommand(params);
     await s3Client.send(command);
 
-    res.json({ message: 'File uploaded successfully' });
+    res.status(200).json({ message: 'File uploaded successfully' });
   } catch (error) {
     console.error('Error uploading file:', error);
     res.status(500).json({ error: 'Failed to upload the file' });
