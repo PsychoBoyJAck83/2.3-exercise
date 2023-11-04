@@ -11,7 +11,7 @@ const s3Client = new S3Client({
 const app = express();
 
 //const bucketName = 'my-cool-local-bucket'; // Replace with your S3 bucket name
-const bucketName = 'ctheos-cf-2.3-exercise';
+const bucketName = 'theos-cf-2.3-exercise';
 const port = 3000;
 
 // Middleware for file uploads
