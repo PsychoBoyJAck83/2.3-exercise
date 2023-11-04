@@ -3,14 +3,15 @@ const express = require('express');
 const { S3Client, ListObjectsV2Command, PutObjectCommand, GetObjectCommand } = require('@aws-sdk/client-s3')
 const fileUpload = require('express-fileupload');
 const s3Client = new S3Client({
-  region: 'us-east-1',
-  endpoint: 'http://localhost:4566',
-  forcePathStyle: true
+  region: 'eu-central-1',
+  //endpoint: 'http://localhost:4566',
+  //forcePathStyle: true
 })
-const listObjectsParams = {
-  Bucket: 'my-cool-local-bucket'
-}
+
 const app = express();
+
+//const bucketName = 'my-cool-local-bucket'; // Replace with your S3 bucket name
+const bucketName = 'cf-2.4-exercise-bucket';
 const port = 3000;
 
 // Middleware for file uploads
@@ -23,8 +24,7 @@ app.get('/', (req, res) => {
 
 // Route to list objects in the S3 bucket
 app.get('/listobjects', async (req, res) => {
-  const bucketName = 'my-cool-local-bucket'; // Replace with your S3 bucket name
-
+  
   try {
     const  listObjectsParams  = {
       Bucket: bucketName,
@@ -49,8 +49,7 @@ app.post('/upload', async (req, res) => {
     }
 
     const fileToUpload = req.files.myFile;
-    const bucketName = 'my-cool-local-bucket'; // Replace with your S3 bucket name
-
+    
     const params = {
       Bucket: bucketName,
       Key: fileToUpload.name,
@@ -70,8 +69,7 @@ app.post('/upload', async (req, res) => {
 app.get('/download/:fileName', async (req, res) => {
   try {
     const { fileName } = req.params;
-    const bucketName = 'my-cool-local-bucket'; // Replace with your S3 bucket name
-
+    
     // Specify the S3 getObject parameters
     const params = {
       Bucket: bucketName,
