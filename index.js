@@ -52,7 +52,7 @@ app.post('/upload', async (req, res) => {
     
     const params = {
       Bucket: bucketName,
-      Key: fileToUpload.name,
+      Key: `original-images/${fileToUpload.name}`,
       Body: fileToUpload.data,
     };
 
