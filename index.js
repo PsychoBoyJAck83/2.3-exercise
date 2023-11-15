@@ -1,17 +1,44 @@
 // Import required modules and libraries
 const express = require('express');
+
+const mongoose = require("mongoose");
+Models = require("./models.js");
+const Images = Models.Images;
+
+const { getContentType, removeS3Prefix } = require("./functions.js");
+
 const { S3Client, ListObjectsV2Command, PutObjectCommand, GetObjectCommand } = require('@aws-sdk/client-s3')
 const fileUpload = require('express-fileupload');
-const s3Client = new S3Client({
+
+/*const s3Client = new S3Client({
   region: 'eu-central-1',
-  //endpoint: 'http://localhost:4566',
-  //forcePathStyle: true
-})
+})*/
+
+let s3Client;
+if (process.env.S3_config) {
+  // Use the environment variable directly as an object
+  s3Client = new S3Client(process.env.S3_config);
+} else {
+  s3Client = new S3Client({
+    region: 'us-east-1',
+    endpoint: 'http://localhost:4566',
+    forcePathStyle: true
+  })}
 
 const app = express();
 
+mongoose
+   .connect(process.env.Connection_URI || "mongodb://Theo83:Uuurin83@127.0.0.1:27017/images_api", {
+      useNewUrlParser: true,
+      useUnifiedTopology: true,})
+      .then(() => {
+         console.log("Connected to the database!");})
+      .catch((err) => {
+         console.error("Failed to connect to the database:", err);
+   });
+
 //const bucketName = 'my-cool-local-bucket'; // Replace with your S3 bucket name
-const bucketName = 'theos-cf-2.3-exercise';
+const bucketName = process.env.BucketName || 'local-bucket';
 const port = 3000;
 
 // Middleware for file uploads
@@ -49,6 +76,9 @@ app.post('/upload', async (req, res) => {
     }
 
     const fileToUpload = req.files.myFile;
+    const imageComment = req.body.imageComment;
+    const imageTitle = req.body.imageTitle;
+
     
     const params = {
       Bucket: bucketName,
@@ -58,6 +88,12 @@ app.post('/upload', async (req, res) => {
 
     const command = new PutObjectCommand(params);
     await s3Client.send(command);
+
+    Images.create({
+      imageFileName: fileToUpload.name,
+      imageTitle: imageTitle,
+      imageComment: imageComment,
+    });
 
     res.status(200).json({ message: 'File uploaded successfully' });
   } catch (error) {
@@ -77,21 +113,51 @@ app.get('/download/:fileName', async (req, res) => {
     };
 
     // Use the S3 getObject command to retrieve the file
-    const { Body }/*response*/ = await s3Client.send(new GetObjectCommand(params));
+    const { Body } = await s3Client.send(new GetObjectCommand(params));
 
     // Set the appropriate response headers for the file download
     res.setHeader('Content-Disposition', `attachment; filename="${fileName}"`);
     res.setHeader('Content-Type', 'application/octet-stream');
 
     // Send the file as the response
-    //res.send(Body);
-    /*response.*/Body.pipe(res);
+    Body.pipe(res);
 
   } catch (error) {
     console.error('Error retrieving file:', error);
     res.status(500).json({ error: 'Failed to retrieve the file' , details: error.message });
   }
 });
+
+app.get('/open/:prefix/:fileName', async (req, res) => {
+  try {
+    const { fileName, prefix } = req.params;
+
+    // Specify the S3 getObject parameters
+    const params = {
+      Bucket: bucketName,
+      Key: `${prefix}/${fileName}`,
+    };
+
+    // Use the S3 getObject command to retrieve the file
+    const { Body } = await s3Client.send(new GetObjectCommand(params));
+
+    // Set the appropriate response headers
+    const contentType = getContentType(fileName);
+    res.setHeader('Content-Type', contentType);
+
+    //Image downloded from S3 bucket will have prefix in the filename    
+    const noPrefixFileName = removeS3Prefix(fileName);
+    res.setHeader('Content-Disposition', `inline; filename="${noPrefixFileName}"`);
+
+    // Send the file as the response
+    Body.pipe(res);
+
+  } catch (error) {
+    console.error('Error retrieving file:', error);
+    res.status(500).json({ error: 'Failed to retrieve the file', details: error.message });
+  }
+});
+
 
 // Start the server
 app.listen(port, () => {
