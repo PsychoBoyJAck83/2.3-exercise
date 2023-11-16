@@ -14,6 +14,8 @@ const fileUpload = require('express-fileupload');
   region: 'eu-central-1',
 })*/
 
+
+
 let s3Client;
 if (process.env.S3_config) {
   // Use the environment variable directly as an object
@@ -37,6 +39,14 @@ mongoose
          console.error("Failed to connect to the database:", err);
    });
 
+   // Enable CORS for all routes
+app.use((req, res, next) => {
+  res.header('Access-Control-Allow-Origin', '*');
+  res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE');
+  res.header('Access-Control-Allow-Headers', 'Content-Type');
+  next();
+});
+
 //const bucketName = 'my-cool-local-bucket'; // Replace with your S3 bucket name
 const bucketName = process.env.BucketName || 'local-bucket';
 const port = 3000;
@@ -55,12 +65,13 @@ app.get('/listobjects', async (req, res) => {
   try {
     const  listObjectsParams  = {
       Bucket: bucketName,
+      Prefix: 'original-images/',
     };
 
     const command = new ListObjectsV2Command( listObjectsParams );
     const response = await s3Client.send(command);
 
-    const objectKeys = response.Contents.map((object) => object.Key);
+    const objectKeys = response.Contents.map((object) => object.Key.split('/').pop());
     res.status(200).json({ objectKeys });
   } catch (error) {
     console.error('Error listing objects:', error);
