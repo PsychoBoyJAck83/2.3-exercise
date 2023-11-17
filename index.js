@@ -186,6 +186,18 @@ app.get("/open/:prefix/:fileName", async (req, res) => {
   }
 });
 
+app.get("/getAll", async (req, res) => {
+  try {
+    const allEntries = await Images.find({});
+    res.status(200).json(allEntries);
+  } catch (error) {
+    console.error("Error retrieving data:", error);
+    res
+      .status(500)
+      .json({ error: "Failed to retrieve data", details: error.message });
+  }
+});
+
 // Start the server
 app.listen(port, () => {
   console.log(`Server is running on http://localhost:${port}`);
