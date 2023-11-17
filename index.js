@@ -1,5 +1,5 @@
 // Import required modules and libraries
-const express = require('express');
+const express = require("express");
 
 const mongoose = require("mongoose");
 Models = require("./models.js");
@@ -7,14 +7,17 @@ const Images = Models.Images;
 
 const { getContentType, removeS3Prefix } = require("./functions.js");
 
-const { S3Client, ListObjectsV2Command, PutObjectCommand, GetObjectCommand } = require('@aws-sdk/client-s3')
-const fileUpload = require('express-fileupload');
+const {
+  S3Client,
+  ListObjectsV2Command,
+  PutObjectCommand,
+  GetObjectCommand,
+} = require("@aws-sdk/client-s3");
+const fileUpload = require("express-fileupload");
 
 /*const s3Client = new S3Client({
   region: 'eu-central-1',
 })*/
-
-
 
 let s3Client;
 if (process.env.S3_config) {
@@ -22,75 +25,84 @@ if (process.env.S3_config) {
   s3Client = new S3Client(process.env.S3_config);
 } else {
   s3Client = new S3Client({
-    region: 'us-east-1',
-    endpoint: 'http://localhost:4566',
-    forcePathStyle: true
-  })}
+    region: "us-east-1",
+    endpoint: "http://localhost:4566",
+    forcePathStyle: true,
+  });
+}
 
 const app = express();
 
 mongoose
-   .connect(process.env.Connection_URI || "mongodb://Theo83:Uuurin83@127.0.0.1:27017/images_api", {
+  .connect(
+    process.env.Connection_URI ||
+      "mongodb://Theo83:Uuurin83@127.0.0.1:27017/images_api",
+    {
       useNewUrlParser: true,
-      useUnifiedTopology: true,})
-      .then(() => {
-         console.log("Connected to the database!");})
-      .catch((err) => {
-         console.error("Failed to connect to the database:", err);
-   });
+      useUnifiedTopology: true,
+    }
+  )
+  .then(() => {
+    console.log("Connected to the database!");
+  })
+  .catch((err) => {
+    console.error("Failed to connect to the database:", err);
+  });
 
-   // Enable CORS for all routes
+// Enable CORS for all routes
 app.use((req, res, next) => {
-  res.header('Access-Control-Allow-Origin', '*');
-  res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE');
-  res.header('Access-Control-Allow-Headers', 'Content-Type');
+  res.header("Access-Control-Allow-Origin", "*");
+  res.header("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE");
+  res.header("Access-Control-Allow-Headers", "Content-Type");
   next();
 });
 
 //const bucketName = 'my-cool-local-bucket'; // Replace with your S3 bucket name
-const bucketName = process.env.BucketName || 'local-bucket';
+const bucketName = process.env.BucketName || "local-bucket";
 const port = 3000;
 
 // Middleware for file uploads
 app.use(fileUpload());
 
 // Define your routes and application logic here
-app.get('/', (req, res) => {
+app.get("/", (req, res) => {
   res.status(200).send("It's alive !");
 });
 
 // Route to list objects in the S3 bucket
-app.get('/listobjects', async (req, res) => {
-  
+app.get("/listobjects/:prefix", async (req, res) => {
+  const { prefix } = req.params;
+
   try {
-    const  listObjectsParams  = {
+    const listObjectsParams = {
       Bucket: bucketName,
-      Prefix: 'original-images/',
+      Prefix: `${prefix}/`,
     };
 
-    const command = new ListObjectsV2Command( listObjectsParams );
+    const command = new ListObjectsV2Command(listObjectsParams);
     const response = await s3Client.send(command);
 
-    const objectKeys = response.Contents.map((object) => object.Key.split('/').pop());
+    const objectKeys = response.Contents.map((object) =>
+      object.Key.split("/").pop()
+    );
     res.status(200).json({ objectKeys });
   } catch (error) {
-    console.error('Error listing objects:', error);
-    res.status(500).json({ error: 'Failed to list objects' });
+    console.error("Error listing objects:", error);
+    res.status(500).json({ error: "Failed to list objects" });
   }
 });
 
 // Route for handling file uploads
-app.post('/upload', async (req, res) => {
+app.post("/upload", async (req, res) => {
   try {
     if (!req.files || !req.files.myFile) {
-      return res.status(400).json({ error: 'No file uploaded' });
+      return res.status(400).json({ error: "No file uploaded" });
     }
 
     const fileToUpload = req.files.myFile;
     const imageComment = req.body.imageComment;
     const imageTitle = req.body.imageTitle;
 
-    
     const params = {
       Bucket: bucketName,
       Key: `original-images/${fileToUpload.name}`,
@@ -106,17 +118,17 @@ app.post('/upload', async (req, res) => {
       imageComment: imageComment,
     });
 
-    res.status(200).json({ message: 'File uploaded successfully' });
+    res.status(200).json({ message: "File uploaded successfully" });
   } catch (error) {
-    console.error('Error uploading file:', error);
-    res.status(500).json({ error: 'Failed to upload the file' });
+    console.error("Error uploading file:", error);
+    res.status(500).json({ error: "Failed to upload the file" });
   }
 });
 
-app.get('/download/:fileName', async (req, res) => {
+app.get("/download/:fileName", async (req, res) => {
   try {
     const { fileName } = req.params;
-    
+
     // Specify the S3 getObject parameters
     const params = {
       Bucket: bucketName,
@@ -127,19 +139,20 @@ app.get('/download/:fileName', async (req, res) => {
     const { Body } = await s3Client.send(new GetObjectCommand(params));
 
     // Set the appropriate response headers for the file download
-    res.setHeader('Content-Disposition', `attachment; filename="${fileName}"`);
-    res.setHeader('Content-Type', 'application/octet-stream');
+    res.setHeader("Content-Disposition", `attachment; filename="${fileName}"`);
+    res.setHeader("Content-Type", "application/octet-stream");
 
     // Send the file as the response
     Body.pipe(res);
-
   } catch (error) {
-    console.error('Error retrieving file:', error);
-    res.status(500).json({ error: 'Failed to retrieve the file' , details: error.message });
+    console.error("Error retrieving file:", error);
+    res
+      .status(500)
+      .json({ error: "Failed to retrieve the file", details: error.message });
   }
 });
 
-app.get('/open/:prefix/:fileName', async (req, res) => {
+app.get("/open/:prefix/:fileName", async (req, res) => {
   try {
     const { fileName, prefix } = req.params;
 
@@ -154,21 +167,24 @@ app.get('/open/:prefix/:fileName', async (req, res) => {
 
     // Set the appropriate response headers
     const contentType = getContentType(fileName);
-    res.setHeader('Content-Type', contentType);
+    res.setHeader("Content-Type", contentType);
 
-    //Image downloded from S3 bucket will have prefix in the filename    
+    //Image downloded from S3 bucket will have prefix in the filename
     const noPrefixFileName = removeS3Prefix(fileName);
-    res.setHeader('Content-Disposition', `inline; filename="${noPrefixFileName}"`);
+    res.setHeader(
+      "Content-Disposition",
+      `inline; filename="${noPrefixFileName}"`
+    );
 
     // Send the file as the response
     Body.pipe(res);
-
   } catch (error) {
-    console.error('Error retrieving file:', error);
-    res.status(500).json({ error: 'Failed to retrieve the file', details: error.message });
+    console.error("Error retrieving file:", error);
+    res
+      .status(500)
+      .json({ error: "Failed to retrieve the file", details: error.message });
   }
 });
-
 
 // Start the server
 app.listen(port, () => {
