@@ -22,7 +22,7 @@ const fileUpload = require("express-fileupload");
 let s3Client;
 if (process.env.S3_config) {
   // Use the environment variable directly as an object
-  s3Client = new S3Client(json.parse(process.env.S3_config));
+  s3Client = new S3Client(JSON.parse(process.env.S3_config));
 } else {
   s3Client = new S3Client({
     region: "us-east-1",
