@@ -58,7 +58,7 @@ app.use((req, res, next) => {
 });
 
 //const bucketName = 'my-cool-local-bucket'; // Replace with your S3 bucket name
-const bucketName = process.env.BucketName || "local-bucket";
+const bucketName = process.env.Bucket_Name || "local-bucket";
 const port = 3000;
 
 // Middleware for file uploads
